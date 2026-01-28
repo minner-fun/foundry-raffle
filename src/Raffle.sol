@@ -26,8 +26,16 @@ contract Raffle is VRFConsumerBaseV2Plus {
     mapping(uint256=>address) public s_playersId;
     mapping(address=>uint256) public s_results;
 
+    enum RaffleState{
+        OPEN,
+        CALCULATING
+    };
+
+    RaffleState private s_raffleState;
+
     error Raffle_NotEnoughEthSend();
     error Raffle_TransferFailed();
+    error Raffle_RaffleNotOpen();
 
     event EnteredRaffle(address indexed player);
 
@@ -48,6 +56,10 @@ contract Raffle is VRFConsumerBaseV2Plus {
     }
 
     function enterRaffle() public payable {
+        if (s_raffleState != RaffleState.OPEN){
+            revert Raffle_NotEnoughEthSend();
+        }
+
         if (msg.value < i_entrancefee) {
             revert Raffle_NotEnoughEthSend();
         }
@@ -59,6 +71,8 @@ contract Raffle is VRFConsumerBaseV2Plus {
         if (block.timestamp - s_lastTimeStamp < i_interval) {
             revert();
         }
+        s_raffleState = RaffleState.CALCULATING;
+
 
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
@@ -74,6 +88,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         );
         s_playersId[requestId] = msg.sender;
         s_results[msg.sender] = 1;
+
     }
 
     function fulfillRandomWords(
@@ -87,6 +102,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         if (!success){
             revert Raffle_TransferFailed();
         }
+        s_raffleState = RaffleState.OPEN;
     }
 
     /**Getter Function */
