@@ -107,7 +107,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
         s_lastTimeStamp = block.timestamp;
 
         s_raffleState = RaffleState.OPEN;
-        event PickedWinner(address winner);
+        emit PickedWinner(address winner);
     }
 
     /**Getter Function */

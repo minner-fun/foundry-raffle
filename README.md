@@ -38,3 +38,20 @@ This code is to create a proveably random smart contract lottery.
 ```
 
 状态变量加上 s_的前缀，event不是随便用的，用着状态变量改变的时候
+
+
+CEI模式，先检查，再改装，最后进行交互
+```solidity
+function coolFunction() public {
+    // Checks
+    checkX();
+    checkY();
+​
+    // Effects
+    updateStateM();
+​
+    // Interactions
+    sendA();
+    callB();
+}
+```
