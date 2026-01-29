@@ -37,7 +37,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error Raffle_NotEnoughEthSend();
     error Raffle_TransferFailed();
     error Raffle_RaffleNotOpen();
-    error Raffle_UpkeepNotNeeded(uint256, uint256, uint256);
+    error Raffle_UpkeepNotNeeded(uint256 balance, uint256 length, uint256 raffleState);
     event EnteredRaffle(address indexed player);
     event PickedWinner(address indexed player);
 
