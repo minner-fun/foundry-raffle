@@ -59,7 +59,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
     function enterRaffle() public payable {
         if (s_raffleState != RaffleState.OPEN){
-            revert Raffle_NotEnoughEthSend();
+            revert Raffle_RaffleNotOpen();
         }
 
         if (msg.value < i_entrancefee) {
@@ -79,21 +79,21 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         bool hasPlayers = s_players.length > 0;
         bool hasBalance = address(this).balance > 0;
         upkeepNeeded = (isOpen && timePassed && hasPlayers && hasBalance);
-        return (upkeepNeeded, "0x0");
+        return (upkeepNeeded, bytes(""));
 
     }
 
     function performUpkeep(bytes calldata /* performData */) external override {
         
-        (bool upkeepNeeded, ) = checkUpkeep("0x0");
+        // (bool upkeepNeeded, ) = checkUpkeep(bytes(""));
 
-        if (!upkeepNeeded){
-            revert Raffle_UpkeepNotNeeded(
-                address(this).balance,
-                s_players.length,
-                uint256(s_raffleState)
-            );
-        }
+        // if (!upkeepNeeded){
+        //     revert Raffle_UpkeepNotNeeded(
+        //         address(this).balance,
+        //         s_players.length,
+        //         uint256(s_raffleState)
+        //     );
+        // }
 
         s_raffleState = RaffleState.CALCULATING;
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
