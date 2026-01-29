@@ -38,6 +38,7 @@ contract Raffle is VRFConsumerBaseV2Plus {
     error Raffle_RaffleNotOpen();
 
     event EnteredRaffle(address indexed player);
+    event PickedWinner(address indexed player);
 
     constructor(
         uint256 subscriptionId,
@@ -102,7 +103,11 @@ contract Raffle is VRFConsumerBaseV2Plus {
         if (!success){
             revert Raffle_TransferFailed();
         }
+        s_players = new address payable[](0); // 长度为0的动态数组，注意(0)表示是的长度为0
+        s_lastTimeStamp = block.timestamp;
+
         s_raffleState = RaffleState.OPEN;
+        event PickedWinner(address winner);
     }
 
     /**Getter Function */
