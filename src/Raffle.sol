@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.19;
-import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
-import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
-import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
+import {
+    VRFConsumerBaseV2Plus
+} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {
+    VRFV2PlusClient
+} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import {
+    AutomationCompatibleInterface
+} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
 /**
  * @title A sample Raffle Contract
@@ -24,10 +30,10 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     uint256 private s_lastTimeStamp;
     address private s_recentWinner;
     address payable[] private s_players;
-    mapping(uint256=>address) public s_playersId;
-    mapping(address=>uint256) public s_results;
+    mapping(uint256 => address) public s_playersId;
+    mapping(address => uint256) public s_results;
 
-    enum RaffleState{
+    enum RaffleState {
         OPEN,
         CALCULATING
     }
@@ -37,7 +43,11 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error Raffle_NotEnoughEthSend();
     error Raffle_TransferFailed();
     error Raffle_RaffleNotOpen();
-    error Raffle_UpkeepNotNeeded(uint256 balance, uint256 length, uint256 raffleState);
+    error Raffle_UpkeepNotNeeded(
+        uint256 balance,
+        uint256 length,
+        uint256 raffleState
+    );
     event EnteredRaffle(address indexed player);
     event PickedWinner(address indexed player);
 
@@ -58,7 +68,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     }
 
     function enterRaffle() public payable {
-        if (s_raffleState != RaffleState.OPEN){
+        if (s_raffleState != RaffleState.OPEN) {
             revert Raffle_RaffleNotOpen();
         }
 
@@ -69,10 +79,13 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         emit EnteredRaffle(msg.sender);
     }
 
-
     function checkUpkeep(
         bytes calldata /* checkData */
-    )public view override returns (bool upkeepNeeded, bytes memory /* performData */)
+    )
+        public
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory /* performData */)
     {
         bool isOpen = RaffleState.OPEN == s_raffleState;
         bool timePassed = (block.timestamp - s_lastTimeStamp) >= i_interval;
@@ -80,20 +93,18 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         bool hasBalance = address(this).balance > 0;
         upkeepNeeded = (isOpen && timePassed && hasPlayers && hasBalance);
         return (upkeepNeeded, bytes(""));
-
     }
 
     function performUpkeep(bytes calldata /* performData */) external override {
-        
         // (bool upkeepNeeded, ) = checkUpkeep(bytes(""));
 
-        // if (!upkeepNeeded){
-        //     revert Raffle_UpkeepNotNeeded(
-        //         address(this).balance,
-        //         s_players.length,
-        //         uint256(s_raffleState)
-        //     );
-        // }
+        if (!upkeepNeeded) {
+            revert Raffle_UpkeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleState)
+            );
+        }
 
         s_raffleState = RaffleState.CALCULATING;
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
@@ -102,7 +113,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
                 subId: i_subscriptionId,
                 requestConfirmations: REQUEST_CONFIRMATIONS,
                 callbackGasLimit: i_callbackGasLimit,
-                numWords:NUM_WORDS,
+                numWords: NUM_WORDS,
                 extraArgs: VRFV2PlusClient._argsToBytes(
                     VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
                 )
@@ -111,8 +122,6 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         s_playersId[requestId] = msg.sender;
         s_results[msg.sender] = 1;
     }
-    
-
 
     function pickWinner() public {
         if (block.timestamp - s_lastTimeStamp < i_interval) {
@@ -120,14 +129,13 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         }
         s_raffleState = RaffleState.CALCULATING;
 
-
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
                 keyHash: i_gasLane,
                 subId: i_subscriptionId,
                 requestConfirmations: REQUEST_CONFIRMATIONS,
                 callbackGasLimit: i_callbackGasLimit,
-                numWords:NUM_WORDS,
+                numWords: NUM_WORDS,
                 extraArgs: VRFV2PlusClient._argsToBytes(
                     VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
                 )
@@ -135,7 +143,6 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         );
         s_playersId[requestId] = msg.sender;
         s_results[msg.sender] = 1;
-
     }
 
     function fulfillRandomWords(
@@ -145,8 +152,10 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         uint256 indexOfWinner = (randomWords[0] % s_players.length);
         address payable winner = s_players[indexOfWinner];
         s_recentWinner = winner;
-        (bool success, ) = s_recentWinner.call{value:address(this).balance}("");
-        if (!success){
+        (bool success, ) = s_recentWinner.call{value: address(this).balance}(
+            ""
+        );
+        if (!success) {
             revert Raffle_TransferFailed();
         }
         s_players = new address payable[](0); // 长度为0的动态数组，注意(0)表示是的长度为0
