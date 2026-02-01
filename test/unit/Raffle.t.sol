@@ -9,7 +9,7 @@ import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
 contract RaffleTest is Test {
     Raffle raffle;
-    HelperConfig helperConfig;
+    // HelperConfig helperConfig;
 
     uint256 constant BALANCE = 5 * 10 ** 19;
 
@@ -17,7 +17,7 @@ contract RaffleTest is Test {
 
     function setUp() external {
         DeployRaffle deployRaffle = new DeployRaffle();
-        (raffle, helperConfig) = deployRaffle.run();
+        raffle = deployRaffle.run();
         vm.deal(alice, BALANCE);
     }
 
