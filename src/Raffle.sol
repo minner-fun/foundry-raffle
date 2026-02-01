@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity 0.8.19;
+pragma solidity ^0.8.19;
 import {
     VRFConsumerBaseV2Plus
 } from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
@@ -52,12 +52,12 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     event PickedWinner(address indexed player);
 
     constructor(
-        uint256 subscriptionId,
-        bytes32 gasLane,
         uint256 entranceFee,
         uint256 interval,
-        uint32 callbackGasLimit,
-        address vrfCoordinatorV2
+        address vrfCoordinatorV2,
+        bytes32 gasLane,
+        uint256 subscriptionId,
+        uint32 callbackGasLimit
     ) VRFConsumerBaseV2Plus(vrfCoordinatorV2) {
         i_entrancefee = entranceFee;
         i_interval = interval;
@@ -98,13 +98,13 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     function performUpkeep(bytes calldata /* performData */) external override {
         // (bool upkeepNeeded, ) = checkUpkeep(bytes(""));
 
-        if (!upkeepNeeded) {
-            revert Raffle_UpkeepNotNeeded(
-                address(this).balance,
-                s_players.length,
-                uint256(s_raffleState)
-            );
-        }
+        // if (!upkeepNeeded) {
+        //     revert Raffle_UpkeepNotNeeded(
+        //         address(this).balance,
+        //         s_players.length,
+        //         uint256(s_raffleState)
+        //     );
+        // }
 
         s_raffleState = RaffleState.CALCULATING;
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
