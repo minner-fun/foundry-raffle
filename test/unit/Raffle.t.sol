@@ -15,6 +15,8 @@ contract RaffleTest is Test {
 
     address alice = makeAddr("alice");
 
+    event EnteredRaffle(address indexed player);
+
     function setUp() external {
         DeployRaffle deployRaffle = new DeployRaffle();
         raffle = deployRaffle.run();
@@ -26,4 +28,26 @@ contract RaffleTest is Test {
         console2.log(entranceFee);
         vm.assertEq(entranceFee, 1e16);
     }
+
+    function testRaffleRevertsWhenYouDontPayEnough()public{
+        vm.prank(alice);
+        vm.expectRevert(Raffle.Raffle_NotEnoughEthSend.selector);
+        raffle.enterRaffle();
+    }
+
+    function testRaffleRecordsPlayerWhenTheyEnter() public{
+        vm.prank(alice);
+        raffle.enterRaffle{value: 0.5 ether}();
+        address playerRecorded = raffle.getPlayer(0);
+        assertEq(playerRecorded, alice);
+
+    }
+
+    function testEmitsEventOnEntrance() public{
+        vm.prank(alice);
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit EnteredRaffle(alice);
+        raffle.enterRaffle{value: 0.5 ether}();
+    }
+
 }
