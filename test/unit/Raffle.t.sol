@@ -12,7 +12,12 @@ contract RaffleTest is Test {
     // HelperConfig helperConfig;
 
     uint256 constant BALANCE = 5 * 10 ** 19;
-
+    uint256 constant entranceFee;
+    uint256 interval;
+    address vrfCoordinator;
+    bytes32 gasLane;
+    uint256 subscriptionId;
+    uint32 callbackGasLimit;
     address alice = makeAddr("alice");
 
     event EnteredRaffle(address indexed player);
@@ -26,7 +31,7 @@ contract RaffleTest is Test {
     function testEntranceFee() public view {
         uint256 entranceFee = raffle.getEntranceFee();
         console2.log(entranceFee);
-        vm.assertEq(entranceFee, 1e16);
+        vm.assertEq(entranceFee, ENTRANCEFEE);
     }
 
     function testRaffleRevertsWhenYouDontPayEnough()public{
@@ -48,6 +53,12 @@ contract RaffleTest is Test {
         vm.expectEmit(true, false, false, false, address(raffle));
         emit EnteredRaffle(alice);
         raffle.enterRaffle{value: 0.5 ether}();
+    }
+
+    function testDontAllowPlayersToEnterWhileRafflelsCalculation() public{
+        vm.prank(alice);
+        raffle.enterRaffle(value:ENTRANCEFEE);
+        vm.warp(block.timestamp + 1)
     }
 
 }
