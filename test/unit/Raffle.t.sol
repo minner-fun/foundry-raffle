@@ -34,31 +34,29 @@ contract RaffleTest is Test {
         vm.assertEq(entranceFee, ENTRANCEFEE);
     }
 
-    function testRaffleRevertsWhenYouDontPayEnough()public{
+    function testRaffleRevertsWhenYouDontPayEnough() public {
         vm.prank(alice);
         vm.expectRevert(Raffle.Raffle_NotEnoughEthSend.selector);
         raffle.enterRaffle();
     }
 
-    function testRaffleRecordsPlayerWhenTheyEnter() public{
+    function testRaffleRecordsPlayerWhenTheyEnter() public {
         vm.prank(alice);
         raffle.enterRaffle{value: 0.5 ether}();
         address playerRecorded = raffle.getPlayer(0);
         assertEq(playerRecorded, alice);
-
     }
 
-    function testEmitsEventOnEntrance() public{
+    function testEmitsEventOnEntrance() public {
         vm.prank(alice);
         vm.expectEmit(true, false, false, false, address(raffle));
         emit EnteredRaffle(alice);
         raffle.enterRaffle{value: 0.5 ether}();
     }
 
-    function testDontAllowPlayersToEnterWhileRafflelsCalculation() public{
+    function testDontAllowPlayersToEnterWhileRafflelsCalculation() public {
         vm.prank(alice);
-        raffle.enterRaffle(value:ENTRANCEFEE);
-        vm.warp(block.timestamp + 1)
+        raffle.enterRaffle{value: ENTRANCEFEE}();
+        vm.warp(block.timestamp + 1);
     }
-
 }
