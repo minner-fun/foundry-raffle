@@ -5,6 +5,7 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 import {Script} from "forge-std/Script.sol";
 // import {Raffle} from "../src/Raffle.sol";
 import {Raffle} from "src/Raffle.sol"; // 可以直接这样导入，不用..的绝对路径
+import {CreateSubscription} from "./Interactions.sol";
 
 contract DeployRaffle is Script {
     function run() external returns (Raffle, HelperConfig) {
@@ -16,6 +17,11 @@ contract DeployRaffle is Script {
         HelperConfig helperConfig = new HelperConfig();
 
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+
+        if (config.subscriptionId == 0){
+            CreateSubscription createSubscription = new CreateSubscription();
+            config.subscriptionId = createSubscription.createSubscription(config.vrfCoordinator);
+        }
         vm.startBroadcast();
         Raffle raffle = new Raffle(
             config.entranceFee,

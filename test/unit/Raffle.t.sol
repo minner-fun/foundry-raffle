@@ -6,6 +6,7 @@ import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {Test, console2} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {LinkToken} from "../mocks/LinkToken.sol";
 
 contract RaffleTest is Test {
     Raffle raffle;
@@ -18,6 +19,7 @@ contract RaffleTest is Test {
     bytes32 gasLane;
     uint256 subscriptionId;
     uint32 callbackGasLimit;
+    LinkToken linktoken;
     address alice = makeAddr("alice");
 
     event EnteredRaffle(address indexed player);
@@ -25,12 +27,14 @@ contract RaffleTest is Test {
     function setUp() external {
         DeployRaffle deployRaffle = new DeployRaffle();
         (raffle, helperConfig) = deployRaffle.run();
-        interval = 300;
-        // interval = helperConfig.interval;
-        // vrfCoordinator = helperConfig.vrfCoordinator;
-        // gasLane = helperConfig.gasLane;
-        // subscriptionId = helperConfig.subscriptionId;
-        // callbackGasLimit = helperConfig.callbackGasLimit;
+        HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+        // interval = 300;
+        interval = config.interval;
+        vrfCoordinator = config.vrfCoordinator;
+        gasLane = config.gasLane;
+        subscriptionId = config.subscriptionId;
+        callbackGasLimit = config.callbackGasLimit;
+        linktoken = LinkToken(config.linkToken);
         vm.deal(alice, STARTING_PLAYER_BALANCE);
     }
 
@@ -60,7 +64,7 @@ contract RaffleTest is Test {
         raffle.enterRaffle{value: ENTRANCEFEE}();
     }
 
-    function testDontAllowPlayersToEnterWhileRafflelsCalculation() public {
+    function testDontAllowPlayersToEnterWhileRafflelsCalculating() public {
         vm.prank(alice);
         raffle.enterRaffle{value: ENTRANCEFEE}();
         vm.warp(block.timestamp + interval + 1);

@@ -7,6 +7,8 @@ import {
     VRFCoordinatorV2_5Mock
 } from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
+import {LinkToken} from "../test/mocks/LinkToken.sol";
+
 abstract contract CodeConstants {
     uint96 public constant MOCK_BASE_FEE = 0.25 ether;
     uint96 public constant MOCK_GAS_PRICE_LINK = 1e9;
@@ -26,6 +28,7 @@ contract HelperConfig is Script, CodeConstants {
         bytes32 gasLane;
         uint256 subscriptionId;
         uint32 callbackGasLimit;
+        address linkToken;
     }
 
     NetworkConfig public localNetworkConfig;
@@ -65,8 +68,9 @@ contract HelperConfig is Script, CodeConstants {
             MOCK_GAS_PRICE_LINK,
             MOCK_WEI_PER_UNIT_LINK
         );
-
+        LinkToken linkToken = new LinkToken();
         vm.stopBroadcast();
+        // vrfCoordinatorMock.addConsumer(0, 0)
         return
             NetworkConfig({
                 entranceFee: 1e16,
@@ -74,7 +78,8 @@ contract HelperConfig is Script, CodeConstants {
                 vrfCoordinator: address(vrfCoordinatorMock),
                 gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
                 subscriptionId: 0,
-                callbackGasLimit: 40000
+                callbackGasLimit: 40000,
+                linkToken: address(linkToken)
             });
     }
 
@@ -86,7 +91,8 @@ contract HelperConfig is Script, CodeConstants {
                 vrfCoordinator: 0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B,
                 gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
                 subscriptionId: 66721667118437083041874565051496272638130143289173869246391392137040530621461,
-                callbackGasLimit: 40000
+                callbackGasLimit: 40000,
+                linkToken: 0x779877A7B0D9E8603169DdbD7836e478b4624789
             });
     }
 
