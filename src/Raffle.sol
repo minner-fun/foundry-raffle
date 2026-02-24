@@ -125,7 +125,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
     function pickWinner() public {
         if (block.timestamp - s_lastTimeStamp < i_interval) {
-            revert();
+            revert("pickWinner faile");
         }
         s_raffleState = RaffleState.CALCULATING;
 
@@ -171,7 +171,11 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         return i_entrancefee;
     }
 
-    function getPlayer(uint256 index) public view returns(address){
-        return s_players[index];
+    function getRaffleStatus() external view returns (RaffleState) {
+        return s_raffleState;
+    }
+
+    function getPlayer(uint256 indexOfPlayer) public view returns (address) {
+        return s_players[indexOfPlayer];
     }
 }

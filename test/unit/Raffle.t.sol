@@ -9,10 +9,10 @@ import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
 contract RaffleTest is Test {
     Raffle raffle;
-    // HelperConfig helperConfig;
+    HelperConfig helperConfig;
 
-    uint256 constant BALANCE = 5 * 10 ** 19;
-    uint256 constant entranceFee;
+    uint256 constant STARTING_PLAYER_BALANCE = 5 * 10 ** 19;
+    uint256 constant ENTRANCEFEE = 1e16;
     uint256 interval;
     address vrfCoordinator;
     bytes32 gasLane;
@@ -24,8 +24,14 @@ contract RaffleTest is Test {
 
     function setUp() external {
         DeployRaffle deployRaffle = new DeployRaffle();
-        raffle = deployRaffle.run();
-        vm.deal(alice, BALANCE);
+        (raffle, helperConfig) = deployRaffle.run();
+        interval = 300;
+        // interval = helperConfig.interval;
+        // vrfCoordinator = helperConfig.vrfCoordinator;
+        // gasLane = helperConfig.gasLane;
+        // subscriptionId = helperConfig.subscriptionId;
+        // callbackGasLimit = helperConfig.callbackGasLimit;
+        vm.deal(alice, STARTING_PLAYER_BALANCE);
     }
 
     function testEntranceFee() public view {
@@ -42,7 +48,7 @@ contract RaffleTest is Test {
 
     function testRaffleRecordsPlayerWhenTheyEnter() public {
         vm.prank(alice);
-        raffle.enterRaffle{value: 0.5 ether}();
+        raffle.enterRaffle{value: ENTRANCEFEE}();
         address playerRecorded = raffle.getPlayer(0);
         assertEq(playerRecorded, alice);
     }
@@ -51,12 +57,18 @@ contract RaffleTest is Test {
         vm.prank(alice);
         vm.expectEmit(true, false, false, false, address(raffle));
         emit EnteredRaffle(alice);
-        raffle.enterRaffle{value: 0.5 ether}();
+        raffle.enterRaffle{value: ENTRANCEFEE}();
     }
 
     function testDontAllowPlayersToEnterWhileRafflelsCalculation() public {
         vm.prank(alice);
         raffle.enterRaffle{value: ENTRANCEFEE}();
-        vm.warp(block.timestamp + 1);
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        raffle.pickWinner();
+
+        // vm.expectRevert(Raffle.Raffle_RaffleNotOpen.selector);
+        // vm.prank(alice);
+        // raffle.enterRaffle{value: ENTRANCEFEE}();
     }
 }

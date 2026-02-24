@@ -7,9 +7,9 @@ import {Script} from "forge-std/Script.sol";
 import {Raffle} from "src/Raffle.sol"; // 可以直接这样导入，不用..的绝对路径
 
 contract DeployRaffle is Script {
-    function run() external returns (Raffle) {
+    function run() external returns (Raffle, HelperConfig) {
         (Raffle raffle, HelperConfig helperConfig) = deployContract();
-        return raffle;
+        return (raffle, helperConfig);
     }
 
     function deployContract() internal returns (Raffle, HelperConfig) {
