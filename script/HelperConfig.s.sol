@@ -70,7 +70,7 @@ contract HelperConfig is Script, CodeConstants {
         );
         LinkToken linkToken = new LinkToken();
         vm.stopBroadcast();
-        // vrfCoordinatorMock.addConsumer(0, 0)
+
         return
             NetworkConfig({
                 entranceFee: 1e16,
