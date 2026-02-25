@@ -8,9 +8,7 @@ import {Test, console2} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {LinkToken} from "../mocks/LinkToken.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {
-    VRFCoordinatorV2_5Mock
-} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 contract RaffleTest is Test {
     Raffle raffle;
@@ -76,7 +74,10 @@ contract RaffleTest is Test {
         raffle.enterRaffle{value: ENTRANCEFEE}();
     }
 
-    function testDontAllowPlayersToEnterWhileRafflelsCalculating() public raffleEntreAndTimePassed{
+    function testDontAllowPlayersToEnterWhileRafflelsCalculating()
+        public
+        raffleEntreAndTimePassed
+    {
         raffle.pickWinner();
 
         vm.expectRevert(Raffle.Raffle_RaffleNotOpen.selector);
@@ -91,7 +92,10 @@ contract RaffleTest is Test {
         assert(!upkeepNeeded);
     }
 
-    function testCheckUpkeepReturnsFalseIfRaffleIsntOpen() public raffleEntreAndTimePassed{
+    function testCheckUpkeepReturnsFalseIfRaffleIsntOpen()
+        public
+        raffleEntreAndTimePassed
+    {
         raffle.performUpkeep("");
 
         (bool upkeepNeeded, ) = raffle.checkUpkeep("");
@@ -99,7 +103,7 @@ contract RaffleTest is Test {
         assert(!upkeepNeeded);
     }
 
-    function testCheckUpkeepReturnsFalseIfEnoughTimeHasntPassed() public{
+    function testCheckUpkeepReturnsFalseIfEnoughTimeHasntPassed() public {
         vm.warp(block.timestamp + interval - 2);
         vm.roll(block.number + 1);
 
@@ -107,17 +111,22 @@ contract RaffleTest is Test {
         assert(!upkeepNeeded);
     }
 
-    function testCheckUpkeepTrueWhenParametersGood() public raffleEntreAndTimePassed{
-
+    function testCheckUpkeepTrueWhenParametersGood()
+        public
+        raffleEntreAndTimePassed
+    {
         (bool upkeepNeeded, ) = raffle.checkUpkeep("");
         assert(upkeepNeeded);
     }
 
-    function testPerformUpkeepCanOnlyRunIfCheckUpkeepIsTrue() public raffleEntreAndTimePassed{
+    function testPerformUpkeepCanOnlyRunIfCheckUpkeepIsTrue()
+        public
+        raffleEntreAndTimePassed
+    {
         raffle.performUpkeep("");
     }
 
-    function testPerformUpkeepRevertsIfCheckUpkeepIsFalse() public{
+    function testPerformUpkeepRevertsIfCheckUpkeepIsFalse() public {
         vm.warp(block.timestamp + interval - 2);
         vm.roll(block.number + 1);
 
@@ -137,19 +146,28 @@ contract RaffleTest is Test {
         raffle.performUpkeep("");
     }
 
-    function testGetRaffleStatusShouldBeOpen()public{
+    function testGetRaffleStatusShouldBeOpen() public {
         Raffle.RaffleState raffleStatus = raffle.getRaffleStatus();
         assertEq(uint256(raffleStatus), uint256(Raffle.RaffleState.OPEN));
     }
 
-    function testGetRaffleStatusShouldBeCALCULATING () public raffleEntreAndTimePassed{
+    function testGetRaffleStatusShouldBeCALCULATING()
+        public
+        raffleEntreAndTimePassed
+    {
         raffle.performUpkeep("");
 
         Raffle.RaffleState raffleStatus = raffle.getRaffleStatus();
-        assertEq(uint256(raffleStatus), uint256(Raffle.RaffleState.CALCULATING));
+        assertEq(
+            uint256(raffleStatus),
+            uint256(Raffle.RaffleState.CALCULATING)
+        );
     }
 
-    function testPerformUpkeepUpdatesRaffleStatusAndEmitsRequestId() public raffleEntreAndTimePassed{
+    function testPerformUpkeepUpdatesRaffleStatusAndEmitsRequestId()
+        public
+        raffleEntreAndTimePassed
+    {
         vm.recordLogs();
         raffle.performUpkeep("");
         Vm.Log[] memory entries = vm.getRecordedLogs();
@@ -183,7 +201,17 @@ contract RaffleTest is Test {
         console2.logUint(uint256(requestId));
 
         Raffle.RaffleState raffleState = raffle.getRaffleStatus();
-        assert(uint256(requestId)>0);
+        assert(uint256(requestId) > 0);
         assert(uint(raffleState) == 1);
+    }
+
+    function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(
+        uint256 randomRequestId
+    ) public raffleEntreAndTimePassed {
+        vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
+        VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
+            randomRequestId,
+            address(raffle)
+        );
     }
 }
