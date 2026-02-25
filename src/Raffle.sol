@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity ^0.8.19;
-import {
-    VRFConsumerBaseV2Plus
-} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
-import {
-    VRFV2PlusClient
-} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
-import {
-    AutomationCompatibleInterface
-} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
+pragma solidity ^0.8.18;
+import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
+import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/automation/interfaces/AutomationCompatibleInterface.sol";
 
 /**
  * @title A sample Raffle Contract
@@ -50,6 +44,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     );
     event EnteredRaffle(address indexed player);
     event PickedWinner(address indexed player);
+    event RequestedRaffleWinner(uint256 indexed requestId);
 
     constructor(
         uint256 entranceFee,
@@ -65,6 +60,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
+        s_raffleState = RaffleState.OPEN;
     }
 
     function enterRaffle() public payable {
@@ -79,12 +75,9 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         emit EnteredRaffle(msg.sender);
     }
 
-    function checkUpkeep(
-        bytes calldata /* checkData */
-    )
-        public
+    function _checkUpkeep()
+        internal
         view
-        override
         returns (bool upkeepNeeded, bytes memory /* performData */)
     {
         bool isOpen = RaffleState.OPEN == s_raffleState;
@@ -95,16 +88,27 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         return (upkeepNeeded, bytes(""));
     }
 
-    function performUpkeep(bytes calldata /* performData */) external override {
-        // (bool upkeepNeeded, ) = checkUpkeep(bytes(""));
+    function checkUpkeep(
+        bytes calldata /* checkData */
+    )
+        public
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory /* performData */)
+    {
+        return _checkUpkeep();
+    }
 
-        // if (!upkeepNeeded) {
-        //     revert Raffle_UpkeepNotNeeded(
-        //         address(this).balance,
-        //         s_players.length,
-        //         uint256(s_raffleState)
-        //     );
-        // }
+    function performUpkeep(bytes calldata /* performData */) external override {
+        (bool upkeepNeeded, ) = _checkUpkeep();
+
+        if (!upkeepNeeded) {
+            revert Raffle_UpkeepNotNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleState)
+            );
+        }
 
         s_raffleState = RaffleState.CALCULATING;
         uint256 requestId = s_vrfCoordinator.requestRandomWords(
@@ -121,6 +125,8 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         );
         s_playersId[requestId] = msg.sender;
         s_results[msg.sender] = 1;
+
+        emit RequestedRaffleWinner(requestId);
     }
 
     function pickWinner() public {
