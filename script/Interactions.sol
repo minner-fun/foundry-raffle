@@ -10,16 +10,16 @@ import {
 
 import {LinkToken} from "../test/mocks/LinkToken.sol";
 
+import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 
-contract CreateSubscription is Script{
-
-    function createSubscriptionUsingConfig() public returns(uint256){
+contract CreateSubscription is Script {
+    function createSubscriptionUsingConfig() public returns (uint256) {
         HelperConfig helperConfig = new HelperConfig();
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
         return createSubscription(config.vrfCoordinator);
     }
 
-    function createSubscription(address vrf) public returns(uint256){
+    function createSubscription(address vrf) public returns (uint256) {
         console2.log("Creating subscription on ChainID: ", block.chainid);
         vm.startBroadcast();
         uint256 subId = VRFCoordinatorV2_5Mock(vrf).createSubscription();
@@ -28,12 +28,12 @@ contract CreateSubscription is Script{
         return subId;
     }
 
-    function run() external returns(uint256){
+    function run() external returns (uint256) {
         return createSubscriptionUsingConfig();
     }
 }
 
-contract FundSubscription is Script, CodeConstants{
+contract FundSubscription is Script, CodeConstants {
     uint256 public constant FUND_AMOUNT = 3 ether;
     function fundSubscriptionUsingConfig() public {
         HelperConfig helperConfig = new HelperConfig();
@@ -42,7 +42,7 @@ contract FundSubscription is Script, CodeConstants{
         uint256 subscriptionId = config.subscriptionId;
         address linkToken = config.linkToken;
 
-        if(subscriptionId == 0){
+        if (subscriptionId == 0) {
             CreateSubscription createSub = new CreateSubscription();
             subscriptionId = createSub.run();
         }
@@ -50,29 +50,73 @@ contract FundSubscription is Script, CodeConstants{
         fundSubscription(vrfCoordinator, subscriptionId, linkToken);
     }
 
-    function fundSubscription(address vrfCoordinator, uint256 subscriptionId, address _linkToken) public {
+    function fundSubscription(
+        address vrfCoordinator,
+        uint256 subscriptionId,
+        address _linkToken
+    ) public {
         console2.log("Funding subscription: ", subscriptionId);
         console2.log("Using vrfCoordinator: ", vrfCoordinator);
         console2.log("On chainId: ", block.chainid);
 
-        if(block.chainid == ETH_LOCATION_CHAIN_ID){
+        if (block.chainid == ETH_LOCATION_CHAIN_ID) {
             vm.startBroadcast();
-            VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(subscriptionId, FUND_AMOUNT);
+            VRFCoordinatorV2_5Mock(vrfCoordinator).fundSubscription(
+                subscriptionId,
+                FUND_AMOUNT
+            );
             vm.stopBroadcast();
-        }else{
+        } else {
             LinkToken linkToken = LinkToken(_linkToken);
             console2.log(linkToken.balanceOf(msg.sender));
             console2.log(msg.sender);
             console2.log(linkToken.balanceOf(address(this)));
             console2.log(address(this));
             vm.startBroadcast();
-            linkToken.transferAndCall(vrfCoordinator, FUND_AMOUNT, abi.encode(subscriptionId));
+            linkToken.transferAndCall(
+                vrfCoordinator,
+                FUND_AMOUNT,
+                abi.encode(subscriptionId)
+            );
             vm.stopBroadcast();
-            
         }
     }
 
     function run() external {
         fundSubscriptionUsingConfig();
+    }
+}
+
+contract AddConsumer is Script {
+    function addConsumerUsingConfig(address raffle) public {
+        HelperConfig helperConfig = new HelperConfig();
+        HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
+        address vrfCoordinator = config.vrfCoordinator;
+        uint256 subscriptionId = config.subscriptionId;
+        addConsumer(raffle, vrfCoordinator, subscriptionId);
+    }
+
+    function addConsumer(
+        address raffle,
+        address vrfCoordinator,
+        uint256 subscriptionId
+    ) public {
+        console2.log("Adding consumer contract: ", raffle);
+        console2.log("Using VRFCoordinator: ", vrfCoordinator);
+        console2.log("On chain id: ", block.chainid);
+        vm.startBroadcast();
+        VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(
+            subscriptionId,
+            raffle
+        );
+        vm.stopBroadcast();
+    }
+
+    function run() external {
+        address raffle = DevOpsTools.get_most_recent_deployment(
+            "Raffle",
+            block.chainid
+        );
+        addConsumerUsingConfig(raffle);
     }
 }

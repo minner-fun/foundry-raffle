@@ -5,7 +5,11 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 import {Script} from "forge-std/Script.sol";
 // import {Raffle} from "../src/Raffle.sol";
 import {Raffle} from "src/Raffle.sol"; // 可以直接这样导入，不用..的绝对路径
-import {CreateSubscription} from "./Interactions.sol";
+import {
+    CreateSubscription,
+    FundSubscription,
+    AddConsumer
+} from "./Interactions.sol";
 
 contract DeployRaffle is Script {
     function run() external returns (Raffle, HelperConfig) {
@@ -18,9 +22,18 @@ contract DeployRaffle is Script {
 
         HelperConfig.NetworkConfig memory config = helperConfig.getConfig();
 
-        if (config.subscriptionId == 0){
+        if (config.subscriptionId == 0) {
             CreateSubscription createSubscription = new CreateSubscription();
-            config.subscriptionId = createSubscription.createSubscription(config.vrfCoordinator);
+            config.subscriptionId = createSubscription.createSubscription(
+                config.vrfCoordinator
+            );
+
+            FundSubscription fundSubscription = new FundSubscription();
+            fundSubscription.fundSubscription(
+                config.vrfCoordinator,
+                config.subscriptionId,
+                config.linkToken
+            );
         }
         vm.startBroadcast();
         Raffle raffle = new Raffle(
@@ -32,7 +45,13 @@ contract DeployRaffle is Script {
             config.callbackGasLimit
         );
         vm.stopBroadcast();
+        AddConsumer addConsumer = new AddConsumer();
 
+        addConsumer.addConsumer(
+            address(raffle),
+            config.vrfCoordinator,
+            config.subscriptionId
+        );
         return (raffle, helperConfig);
     }
 }

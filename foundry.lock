@@ -13,5 +13,14 @@
   },
   "lib/foundry-chainlink-toolkit": {
     "rev": "d610ec9ef54c325de7de1a5622c19933b2ae26cf"
+  },
+  "lib\\foundry-devops": {
+    "tag": {
+      "name": "0.4.0",
+      "rev": "efff097a87e70c3d15661c9f2a2daeae0b33d5d5"
+    }
+  },
+  "lib/solmate": {
+    "rev": "89365b880c4f3c786bdd453d4b8e8fe410344a69"
   }
 }
