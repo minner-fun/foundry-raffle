@@ -8,7 +8,9 @@ import {Test, console2} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {LinkToken} from "../mocks/LinkToken.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {
+    VRFCoordinatorV2_5Mock
+} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 contract RaffleTest is Test {
     Raffle raffle;
@@ -173,35 +175,9 @@ contract RaffleTest is Test {
         Vm.Log[] memory entries = vm.getRecordedLogs();
         bytes32 requestId = entries[1].topics[1];
 
-        console2.log("recorded logs length:");
-        console2.logUint(entries.length);
-
-        for (uint256 i = 0; i < entries.length; i++) {
-            console2.log("---- log index ----");
-            console2.logUint(i);
-
-            console2.log("emitter:");
-            console2.logAddress(entries[i].emitter);
-
-            console2.log("topics length:");
-            console2.logUint(entries[i].topics.length);
-            for (uint256 j = 0; j < entries[i].topics.length; j++) {
-                console2.log("topic index:");
-                console2.logUint(j);
-                console2.logBytes32(entries[i].topics[j]);
-            }
-
-            console2.log("data:");
-            console2.logBytes(entries[i].data);
-        }
-
-        console2.log("requestId (topic[1] as bytes32):");
-        console2.logBytes32(requestId);
-        console2.log("requestId (topic[1] as uint256):");
-        console2.logUint(uint256(requestId));
-
         Raffle.RaffleState raffleState = raffle.getRaffleStatus();
         assert(uint256(requestId) > 0);
+        console2.log("requestId: ", uint256(requestId));
         assert(uint(raffleState) == 1);
     }
 
@@ -214,4 +190,73 @@ contract RaffleTest is Test {
             address(raffle)
         );
     }
+
+    function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney()
+        public
+        raffleEntreAndTimePassed
+    {
+        uint256 additionalEntrants = 3;
+        uint256 startingIndex = 1;
+        address expectedWinner = address(1);
+
+        for (
+            uint256 i = startingIndex;
+            i < startingIndex + additionalEntrants;
+            i++
+        ) {
+            address player = address(uint160(i));
+            hoax(player, STARTING_PLAYER_BALANCE);
+            raffle.enterRaffle{value: ENTRANCEFEE}();
+        }
+
+        uint256 startingTimeStamp = raffle.getLastTimeStamp();
+        uint256 winnerStartingBalance = expectedWinner.balance;
+
+        vm.recordLogs();
+        raffle.performUpkeep("");
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[1];
+        VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
+            uint256(requestId),
+            address(raffle)
+        );
+
+        address recentWinner = raffle.getRencentWinner();
+        Raffle.RaffleState raffleState = raffle.getRaffleStatus();
+        uint256 winnerBalance = recentWinner.balance;
+        uint256 endingTimeStamp = raffle.getLastTimeStamp();
+        uint256 prize = ENTRANCEFEE * (additionalEntrants + 1);
+
+        assert(expectedWinner == recentWinner);
+        assert(uint256(raffleState) == 0);
+        assert(winnerBalance == winnerStartingBalance + prize);
+        assert(endingTimeStamp > startingTimeStamp);
+    }
 }
+
+// console2.log("recorded logs length:");
+// console2.logUint(entries.length);
+
+// for (uint256 i = 0; i < entries.length; i++) {
+//     console2.log("---- log index ----");
+//     console2.logUint(i);
+
+//     console2.log("emitter:");
+//     console2.logAddress(entries[i].emitter);
+
+//     console2.log("topics length:");
+//     console2.logUint(entries[i].topics.length);
+//     for (uint256 j = 0; j < entries[i].topics.length; j++) {
+//         console2.log("topic index:");
+//         console2.logUint(j);
+//         console2.logBytes32(entries[i].topics[j]);
+//     }
+
+//     console2.log("data:");
+//     console2.logBytes(entries[i].data);
+// }
+
+// console2.log("requestId (topic[1] as bytes32):");
+// console2.logBytes32(requestId);
+// console2.log("requestId (topic[1] as uint256):");
+// console2.logUint(uint256(requestId));
