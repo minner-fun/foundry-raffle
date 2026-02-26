@@ -27,10 +27,13 @@ contract HelperConfig is Script, CodeConstants {
         uint256 subscriptionId;
         uint32 callbackGasLimit;
         address linkToken;
+        uint256 deployerKey;
     }
 
     NetworkConfig public localNetworkConfig;
     mapping(uint256 chainId => NetworkConfig) public networkConfigs;
+    
+    uint256 public constant DEFAULT_ANVIL_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
 
     constructor() {
         networkConfigs[ETH_SEPOLIA_CHAIN_ID] = getSepoliaConfig();
@@ -75,13 +78,14 @@ contract HelperConfig is Script, CodeConstants {
             gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
             subscriptionId: 0,
             callbackGasLimit: 500000,
-            linkToken: address(linkToken)
+            linkToken: address(linkToken),
+            deployerKey: DEFAULT_ANVIL_KEY
         });
         networkConfigs[ETH_LOCATION_CHAIN_ID] = localNetworkConfig;
         return localNetworkConfig;
     }
 
-    function getSepoliaConfig() internal pure returns (NetworkConfig memory) {
+    function getSepoliaConfig() internal view returns (NetworkConfig memory) {
         return
             NetworkConfig({
                 entranceFee: 1e16,
@@ -90,7 +94,8 @@ contract HelperConfig is Script, CodeConstants {
                 gasLane: 0x787d74caea10b2b357790d5b5247c2f63d1d91572a9846f780606e4d953677ae,
                 subscriptionId: 66721667118437083041874565051496272638130143289173869246391392137040530621461,
                 callbackGasLimit: 500000,
-                linkToken: 0x779877A7B0D9E8603169DdbD7836e478b4624789
+                linkToken: 0x779877A7B0D9E8603169DdbD7836e478b4624789,
+                deployerKey:vm.envUint("SEPOLIA_PRIVATE_KEY")
             });
     }
 

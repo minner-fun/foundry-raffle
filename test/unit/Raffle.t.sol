@@ -35,6 +35,13 @@ contract RaffleTest is Test {
         _;
     }
 
+    modifier skipFork(){
+        if (block.chainid != 31337){
+            return;
+        }
+        _;
+    }
+
     function setUp() external {
         DeployRaffle deployRaffle = new DeployRaffle();
         (raffle, helperConfig) = deployRaffle.run();
@@ -183,7 +190,7 @@ contract RaffleTest is Test {
 
     function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(
         uint256 randomRequestId
-    ) public raffleEntreAndTimePassed {
+    ) public raffleEntreAndTimePassed skipFork {
         vm.expectRevert(VRFCoordinatorV2_5Mock.InvalidRequest.selector);
         VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
             randomRequestId,
@@ -196,6 +203,7 @@ contract RaffleTest is Test {
     )
         public
         raffleEntreAndTimePassed
+        skipFork
     {
         uint256 additionalEntrants = bound(additionalEntrantsNum, 1, 10000);
         uint256 startingIndex = 1;
