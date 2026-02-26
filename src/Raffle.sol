@@ -24,7 +24,10 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     uint256 private immutable i_interval;
     uint256 private s_lastTimeStamp;
     address private s_recentWinner;
-    address payable[] private s_players;
+    // address payable[] private s_players;
+    mapping(uint256 => address payable) public s_players;
+    uint256 public s_playersCount;
+
     mapping(uint256 => address) public s_playersId;
     mapping(address => uint256) public s_results;
 
@@ -72,7 +75,9 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         if (msg.value < i_entrancefee) {
             revert Raffle_NotEnoughEthSend();
         }
-        s_players.push(payable(msg.sender));
+        // s_players.push(payable(msg.sender));
+        s_players[s_playersCount] = payable(msg.sender);
+        s_playersCount++;
         emit EnteredRaffle(msg.sender);
     }
 
@@ -83,7 +88,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     {
         bool isOpen = RaffleState.OPEN == s_raffleState;
         bool timePassed = (block.timestamp - s_lastTimeStamp) >= i_interval;
-        bool hasPlayers = s_players.length > 0;
+        bool hasPlayers = s_playersCount > 0;
         bool hasBalance = address(this).balance > 0;
         upkeepNeeded = (isOpen && timePassed && hasPlayers && hasBalance);
         return (upkeepNeeded, bytes(""));
@@ -106,7 +111,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         if (!upkeepNeeded) {
             revert Raffle_UpkeepNotNeeded(
                 address(this).balance,
-                s_players.length,
+                s_playersCount,
                 uint256(s_raffleState)
             );
         }
@@ -156,7 +161,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         uint256,
         uint256[] calldata randomWords
     ) internal override {
-        uint256 indexOfWinner = (randomWords[0] % s_players.length);
+        uint256 indexOfWinner = (randomWords[0] % s_playersCount);
         address payable winner = s_players[indexOfWinner];
         s_recentWinner = winner;
         (bool success, ) = s_recentWinner.call{value: address(this).balance}(
@@ -165,7 +170,8 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         if (!success) {
             revert Raffle_TransferFailed();
         }
-        s_players = new address payable[](0); // 长度为0的动态数组，注意(0)表示是的长度为0
+        // s_players = new address payable[](0); // 长度为0的动态数组，注意(0)表示是的长度为0
+        s_playersCount = 0;
         s_lastTimeStamp = block.timestamp;
 
         s_raffleState = RaffleState.OPEN;
@@ -191,7 +197,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     }
 
     function getNumberOfPlayers() public view returns (uint256) {
-        return s_players.length;
+        return s_playersCount;
     }
 
     function getLastTimeStamp() public view returns (uint256) {

@@ -48,7 +48,6 @@ contract RaffleTest is Test {
         linktoken = LinkToken(config.linkToken);
         vm.deal(alice, STARTING_PLAYER_BALANCE);
         console2.log("test setUp vrf addr: ", vrfCoordinator);
-
     }
 
     function testEntranceFee() public view {
@@ -192,31 +191,39 @@ contract RaffleTest is Test {
         );
     }
 
-    function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney()
+    function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney(
+        uint256 additionalEntrantsNum
+    )
         public
         raffleEntreAndTimePassed
     {
-        uint256 additionalEntrants = 3;
+        uint256 additionalEntrants = bound(additionalEntrantsNum, 1, 10000);
         uint256 startingIndex = 1;
-        address expectedWinner = address(1);
 
         for (
             uint256 i = startingIndex;
             i < startingIndex + additionalEntrants;
             i++
         ) {
-            address player = address(uint160(i));
+            // Avoid precompile addresses (0x01..0x0b) which can fail on ETH transfer in tests.
+            address player = address(uint160(i + 100));
             hoax(player, STARTING_PLAYER_BALANCE);
             raffle.enterRaffle{value: ENTRANCEFEE}();
         }
 
         uint256 startingTimeStamp = raffle.getLastTimeStamp();
-        uint256 winnerStartingBalance = expectedWinner.balance;
 
         vm.recordLogs();
         raffle.performUpkeep("");
         Vm.Log[] memory entries = vm.getRecordedLogs();
         bytes32 requestId = entries[1].topics[1];
+
+        uint256 expectedWinnerIndex = uint256(
+            keccak256(abi.encode(uint256(requestId), uint256(0)))
+        ) % raffle.getNumberOfPlayers();
+        address expectedWinner = raffle.getPlayer(expectedWinnerIndex);
+        uint256 winnerStartingBalance = expectedWinner.balance;
+
         VRFCoordinatorV2_5Mock(vrfCoordinator).fulfillRandomWords(
             uint256(requestId),
             address(raffle)
