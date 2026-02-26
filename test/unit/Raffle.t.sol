@@ -8,9 +8,8 @@ import {Test, console2} from "forge-std/Test.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {LinkToken} from "../mocks/LinkToken.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {
-    VRFCoordinatorV2_5Mock
-} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+
+import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 
 contract RaffleTest is Test {
     Raffle raffle;
@@ -48,6 +47,8 @@ contract RaffleTest is Test {
         callbackGasLimit = config.callbackGasLimit;
         linktoken = LinkToken(config.linkToken);
         vm.deal(alice, STARTING_PLAYER_BALANCE);
+        console2.log("test setUp vrf addr: ", vrfCoordinator);
+
     }
 
     function testEntranceFee() public view {

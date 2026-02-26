@@ -5,11 +5,9 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 import {Script} from "forge-std/Script.sol";
 // import {Raffle} from "../src/Raffle.sol";
 import {Raffle} from "src/Raffle.sol"; // 可以直接这样导入，不用..的绝对路径
-import {
-    CreateSubscription,
-    FundSubscription,
-    AddConsumer
-} from "./Interactions.sol";
+import {CreateSubscription, FundSubscription, AddConsumer} from "./Interactions.sol";
+import {console2} from "forge-std/Console2.sol";
+
 
 contract DeployRaffle is Script {
     function run() external returns (Raffle, HelperConfig) {
@@ -45,6 +43,7 @@ contract DeployRaffle is Script {
             config.callbackGasLimit
         );
         vm.stopBroadcast();
+        console2.log("Raffle deployed vrf addr: ", config.vrfCoordinator);
         AddConsumer addConsumer = new AddConsumer();
 
         addConsumer.addConsumer(
