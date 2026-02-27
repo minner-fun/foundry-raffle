@@ -8,7 +8,6 @@ import {Raffle} from "src/Raffle.sol"; // 可以直接这样导入，不用..的
 import {CreateSubscription, FundSubscription, AddConsumer} from "./Interactions.sol";
 import {console2} from "forge-std/Console2.sol";
 
-
 contract DeployRaffle is Script {
     function run() external returns (Raffle, HelperConfig) {
         (Raffle raffle, HelperConfig helperConfig) = deployContract();
@@ -22,17 +21,11 @@ contract DeployRaffle is Script {
 
         if (config.subscriptionId == 0) {
             CreateSubscription createSubscription = new CreateSubscription();
-            config.subscriptionId = createSubscription.createSubscription(
-                config.vrfCoordinator,
-                config.deployerKey
-            );
+            config.subscriptionId = createSubscription.createSubscription(config.vrfCoordinator, config.deployerKey);
 
             FundSubscription fundSubscription = new FundSubscription();
             fundSubscription.fundSubscription(
-                config.vrfCoordinator,
-                config.subscriptionId,
-                config.linkToken,
-                config.deployerKey
+                config.vrfCoordinator, config.subscriptionId, config.linkToken, config.deployerKey
             );
         }
         vm.startBroadcast();
@@ -48,12 +41,7 @@ contract DeployRaffle is Script {
         console2.log("Raffle deployed vrf addr: ", config.vrfCoordinator);
         AddConsumer addConsumer = new AddConsumer();
 
-        addConsumer.addConsumer(
-            address(raffle),
-            config.vrfCoordinator,
-            config.subscriptionId,
-            config.deployerKey
-        );
+        addConsumer.addConsumer(address(raffle), config.vrfCoordinator, config.subscriptionId, config.deployerKey);
         return (raffle, helperConfig);
     }
 }
