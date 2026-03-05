@@ -33,7 +33,6 @@ contract HelperConfig is Script, CodeConstants {
     NetworkConfig public localNetworkConfig;
     mapping(uint256 chainId => NetworkConfig) public networkConfigs;
     
-    uint256 public constant DEFAULT_ANVIL_KEY = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
 
     constructor() {
         networkConfigs[ETH_SEPOLIA_CHAIN_ID] = getSepoliaConfig();
@@ -79,7 +78,7 @@ contract HelperConfig is Script, CodeConstants {
             subscriptionId: 0,
             callbackGasLimit: 500000,
             linkToken: address(linkToken),
-            deployerKey: DEFAULT_ANVIL_KEY
+            deployerKey: vm.envUint("ANVIL_PRIVATE_KEY")
         });
         networkConfigs[ETH_LOCATION_CHAIN_ID] = localNetworkConfig;
         return localNetworkConfig;
